@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#f8fbff">
-<title>Tool Manager - A1 / A2</title>
+<title>Tool Manager - A1 / A2 - KEY 1 tuần</title>
 <style>
 :root{
   --text:#111b38;--muted:#73809e;--line:#e6ebf4;--blue:#377dff;
@@ -118,6 +118,14 @@ th{color:#7a87a4;font-weight:600}.code{font-family:Consolas,monospace}
 .login-error{min-height:20px;color:#d44860;font-size:12px;margin-top:8px}
 .preview-label{display:none;margin-top:12px;font-size:12px;color:#996b10}
 .preview-label.show{display:block}
+.fixed-value{
+  height:42px;border:1px solid #dce4f0;border-radius:10px;padding:0 12px;
+  background:#f7f9fc;color:#253857;display:flex;align-items:center;font-weight:700
+}
+.countdown{font-weight:700;white-space:nowrap}
+.countdown.good{color:#11865a}
+.countdown.warn{color:#a8720c}
+.countdown.bad{color:#cc4056}
 @media(max-width:900px){
   .shell{grid-template-columns:88px 1fr}
   .brand{font-size:0}.brand:after{content:"TM";font-size:18px;color:var(--blue)}
@@ -148,7 +156,7 @@ th{color:#7a87a4;font-weight:600}.code{font-family:Consolas,monospace}
       <button data-page="tool">Quản lý tool</button>
       <button data-page="accounts">Quản lý ID / KEY</button>
     </nav>
-    <div class="version">A1 + A2 • Pages v3</div>
+    <div class="version">A1 + A2 • Pages v4 • KEY 1 tuần</div>
   </aside>
 
   <main>
@@ -176,6 +184,7 @@ th{color:#7a87a4;font-weight:600}.code{font-family:Consolas,monospace}
           <p>Một hệ thống ID + KEY, cấp quyền riêng A1, A2 hoặc cả A1+A2.</p>
           <div class="pills">
             <span class="pill good" id="overviewStatus">● Đang hoạt động</span>
+            <span class="pill">KEY: 1 tuần</span>
             <span class="pill" id="overviewAccounts">0 ID đang quản lý</span>
             <span class="pill" id="overviewDevices">0 thiết bị</span>
           </div>
@@ -227,7 +236,7 @@ th{color:#7a87a4;font-weight:600}.code{font-family:Consolas,monospace}
             <div>
               <h2>Quản lý ID / KEY</h2>
               <p style="margin:5px 0 0;color:var(--muted);font-size:13px">
-                Bạn nhập ID thủ công; KEY được hệ thống tự sinh.
+                Bạn nhập ID thủ công; KEY được tự sinh và có thời hạn cố định 1 tuần. Hết hạn, tool tự bị chặn cho tới khi gia hạn.
               </p>
             </div>
             <button id="createBtn" class="primary" onclick="showCreate()">+ Tạo ID mới</button>
@@ -237,12 +246,12 @@ th{color:#7a87a4;font-weight:600}.code{font-family:Consolas,monospace}
             <table>
               <thead>
                 <tr>
-                  <th>ID</th><th>KEY</th><th>Quyền tool</th><th>Hết hạn</th><th>Thiết bị</th>
+                  <th>ID</th><th>KEY</th><th>Quyền tool</th><th>Hết hạn</th><th>Còn lại</th><th>Thiết bị</th>
                   <th>Trạng thái</th><th>Thao tác</th>
                 </tr>
               </thead>
               <tbody id="accountsBody">
-                <tr><td colspan="7" style="color:#7b89a6">Chưa tải dữ liệu từ API.</td></tr>
+                <tr><td colspan="8" style="color:#7b89a6">Chưa tải dữ liệu từ API.</td></tr>
               </tbody>
             </table>
           </div>
@@ -298,12 +307,7 @@ th{color:#7a87a4;font-weight:600}.code{font-family:Consolas,monospace}
     <div class="form-row">
       <div class="form-group">
         <label>Thời hạn</label>
-        <select id="newMonths">
-          <option value="1">1 tháng</option>
-          <option value="3">3 tháng</option>
-          <option value="6">6 tháng</option>
-          <option value="12">12 tháng</option>
-        </select>
+        <div class="fixed-value">1 tuần</div>
       </div>
       <div class="form-group">
         <label>Số thiết bị</label>
@@ -312,7 +316,7 @@ th{color:#7a87a4;font-weight:600}.code{font-family:Consolas,monospace}
         </select>
       </div>
     </div>
-    <p class="note">KEY được sinh ngẫu nhiên. Server chỉ lưu hash của KEY.</p>
+    <p class="note">KEY được sinh ngẫu nhiên. Mỗi KEY mới có 7 ngày sử dụng. Khi hết hạn, dùng nút <b>+1 tuần</b> để gia hạn hoặc <b>Khóa</b> tài khoản.</p>
     <div style="display:flex;justify-content:flex-end;gap:8px">
       <button class="secondary" onclick="hideCreate()">Hủy</button>
       <button class="primary" onclick="createAccount()">Tạo ID + KEY</button>
@@ -347,7 +351,7 @@ let authenticated = false;
 const pageInfo = {
   overview:["Tổng quan","Thông tin tool hiện có trong hệ thống"],
   tool:["Quản lý tool","Trạng thái và thiết lập chung của A1 / A2"],
-  accounts:["Quản lý ID / KEY","Tạo tài khoản, gia hạn và quản lý thiết bị"]
+  accounts:["Quản lý ID / KEY","KEY 1 tuần • đếm ngược • gia hạn • khóa • quản lý thiết bị"]
 };
 
 document.querySelectorAll("nav button").forEach(
@@ -578,7 +582,7 @@ async function createAccount(){
       body:JSON.stringify({
         user_id,
         tool_access:newToolAccess.value,
-        months:Number(newMonths.value),
+        weeks:1,
         max_devices:Number(newMaxDevices.value)
       })
     });
@@ -610,7 +614,7 @@ async function loadAccounts(){
 
     if (!d.accounts.length) {
       accountsBody.innerHTML =
-        '<tr><td colspan="7" style="color:#7b89a6">Chưa có ID nào.</td></tr>';
+        '<tr><td colspan="8" style="color:#7b89a6">Chưa có ID nào.</td></tr>';
       return;
     }
 
@@ -629,6 +633,7 @@ async function loadAccounts(){
           </select>
         </td>
         <td>${esc(a.expires_at.slice(0,10))}</td>
+        <td><span class="countdown" data-expires-at="${escAttr(a.expires_at)}">Đang tính...</span></td>
         <td>
           ${a.devices.length}/${a.max_devices}
           ${a.devices.map(x => `
@@ -645,7 +650,7 @@ async function loadAccounts(){
         </td>
         <td class="${a.locked || a.expired ? "bad" : "good"}">${state}</td>
         <td>
-          <button class="secondary" onclick="extendAccount(${a.id},1)">+1 tháng</button>
+          <button class="secondary" title="Gia hạn thêm 7 ngày" onclick="extendAccount(${a.id},1)">+1 tuần</button>
           <button class="secondary" onclick="toggleLock(${a.id},${a.locked ? 0 : 1})">
             ${a.locked ? "Mở khóa" : "Khóa"}
           </button>
@@ -659,17 +664,19 @@ async function loadAccounts(){
     document.querySelectorAll(".danger[data-d]").forEach(
       b => b.onclick = () => deleteDevice(Number(b.dataset.a), b.dataset.d)
     );
+
+    updateCountdowns();
   } catch(e) {
     accountsBody.innerHTML =
-      `<tr><td colspan="7" class="bad">${esc(e.message)}</td></tr>`;
+      `<tr><td colspan="8" class="bad">${esc(e.message)}</td></tr>`;
   }
 }
 
-async function extendAccount(id, months){
+async function extendAccount(id, weeks){
   try {
     await api(`/api/admin/accounts/${id}/extend`, {
       method:"POST",
-      body:JSON.stringify({months})
+      body:JSON.stringify({weeks})
     });
     await loadAccounts();
     await loadStats();
@@ -755,6 +762,43 @@ async function loadStats(){
   }
 }
 
+function formatRemaining(ms){
+  if (!Number.isFinite(ms)) return "—";
+  if (ms <= 0) return "Đã hết hạn";
+
+  const totalSeconds = Math.floor(ms / 1000);
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (days > 0) return `${days} ngày ${hours} giờ ${minutes} phút`;
+  if (hours > 0) return `${hours} giờ ${minutes} phút ${seconds} giây`;
+  if (minutes > 0) return `${minutes} phút ${seconds} giây`;
+  return `${seconds} giây`;
+}
+
+function updateCountdowns(){
+  const now = Date.now();
+  document.querySelectorAll(".countdown[data-expires-at]").forEach(el => {
+    const expires = Date.parse(el.dataset.expiresAt);
+    const remaining = expires - now;
+
+    el.textContent = formatRemaining(remaining);
+    el.classList.remove("good", "warn", "bad");
+
+    if (!Number.isFinite(remaining)) {
+      return;
+    } else if (remaining <= 0) {
+      el.classList.add("bad");
+    } else if (remaining <= 24 * 60 * 60 * 1000) {
+      el.classList.add("warn");
+    } else {
+      el.classList.add("good");
+    }
+  });
+}
+
 function esc(s){
   return String(s ?? "").replace(/[&<>"']/g, m => ({
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
@@ -766,7 +810,9 @@ setInterval(
   () => clock.textContent = new Date().toLocaleString("vi-VN"),
   1000
 );
+setInterval(updateCountdowns, 1000);
 clock.textContent = new Date().toLocaleString("vi-VN");
+updateCountdowns();
 
 adminPass.addEventListener("keydown", e => {
   if (e.key === "Enter") adminLogin();
