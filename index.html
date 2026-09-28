@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#f8fbff">
-<title>Tool Manager - A1 / A2</title>
+<title>Tool Manager - A1 / A2 - KEY 1 tuần</title>
 <style>
 :root{
   --text:#111b38;--muted:#73809e;--line:#e6ebf4;--blue:#377dff;
@@ -145,6 +145,13 @@ th{color:#7a87a4;font-weight:600}.code{font-family:Consolas,monospace}
   .content{padding:16px 16px 86px}
   .form-row{grid-template-columns:1fr}
 }
+
+.history-box{width:min(900px,96vw)}
+.history-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.history-sub{color:var(--muted);font-size:13px;margin:6px 0 14px}
+.history-empty{color:#7b89a6;text-align:center;padding:22px}
+.history-event{font-weight:700}
+.history-result.good{color:#11865a}.history-result.bad{color:#cc4056}.history-result.warn{color:#a8720c}
 </style>
 </head>
 <body>
@@ -156,7 +163,7 @@ th{color:#7a87a4;font-weight:600}.code{font-family:Consolas,monospace}
       <button data-page="tool">Quản lý tool</button>
       <button data-page="accounts">Quản lý ID / KEY</button>
     </nav>
-    <div class="version">A1 + A2 • Pages v3</div>
+    <div class="version">A1 + A2 • Pages v4 • KEY 1 tuần</div>
   </aside>
 
   <main>
@@ -332,6 +339,25 @@ th{color:#7a87a4;font-weight:600}.code{font-family:Consolas,monospace}
     <div class="new-key" id="newKeyValue"></div>
     <button class="primary" onclick="copyKey()">Sao chép KEY</button>
     <button class="secondary" onclick="keyModal.classList.remove('show')">Đóng</button>
+  </div>
+</div>
+
+<!-- Account history -->
+<div class="modal" id="historyModal">
+  <div class="modal-box history-box">
+    <div class="history-head">
+      <div>
+        <h3 style="margin:0">Chi tiết lịch sử ID: <span id="historyUserId"></span></h3>
+        <div class="history-sub">Chỉ hiển thị thời gian CHECK KEY và ĐÓNG LAUNCHER của ID này.</div>
+      </div>
+      <button class="secondary" onclick="closeHistory()">Đóng</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Thời gian</th><th>Sự kiện</th><th>Thiết bị</th><th>Kết quả</th></tr></thead>
+        <tbody id="historyBody"><tr><td colspan="4" class="history-empty">Đang tải...</td></tr></tbody>
+      </table>
+    </div>
   </div>
 </div>
 
@@ -655,6 +681,7 @@ async function loadAccounts(){
             ${a.locked ? "Mở khóa" : "Khóa"}
           </button>
           <button class="secondary" onclick="resetKey(${a.id})">Đổi KEY</button>
+          <button class="secondary" onclick="showHistory(${a.id}, '${escAttr(a.user_id)}')">Chi tiết</button>
           <button class="delete-account" onclick="deleteAccount(${a.id}, \'${escAttr(a.user_id)}\')">Xóa</button>
         </td>
       `;
@@ -731,6 +758,59 @@ async function resetKey(id){
   } catch(e) { alert(e.message); }
 }
 
+
+function closeHistory(){
+  historyModal.classList.remove("show");
+}
+
+function formatHistoryTime(value){
+  if (!value) return "—";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return esc(value);
+  return d.toLocaleString("vi-VN", {
+    day:"2-digit", month:"2-digit", year:"numeric",
+    hour:"2-digit", minute:"2-digit", second:"2-digit"
+  });
+}
+
+function historyEventLabel(value){
+  if (value === "CHECK_KEY") return "Check KEY";
+  if (value === "LAUNCHER_CLOSE") return "Đóng launcher";
+  return value || "—";
+}
+
+function historyResultClass(value){
+  const s = String(value || "").toLowerCase();
+  if (s.includes("hợp lệ") || s.includes("đã đóng")) return "good";
+  if (s.includes("hết hạn") || s.includes("khóa") || s.includes("sai") || s.includes("vượt")) return "bad";
+  return "warn";
+}
+
+async function showHistory(id, userId){
+  historyUserId.textContent = userId || String(id);
+  historyBody.innerHTML = '<tr><td colspan="4" class="history-empty">Đang tải...</td></tr>';
+  historyModal.classList.add("show");
+
+  try {
+    const d = await api(`/api/admin/accounts/${id}/history`);
+    const rows = Array.isArray(d.history) ? d.history : [];
+    if (!rows.length) {
+      historyBody.innerHTML = '<tr><td colspan="4" class="history-empty">Chưa có lịch sử.</td></tr>';
+      return;
+    }
+
+    historyBody.innerHTML = rows.map(x => `
+      <tr>
+        <td>${formatHistoryTime(x.created_at)}</td>
+        <td class="history-event">${esc(historyEventLabel(x.event))}</td>
+        <td>${esc(x.device_name || "Thiết bị")}<br><small class="code">${esc((x.device_id || "").slice(0,12))}${x.device_id ? "..." : ""}</small></td>
+        <td class="history-result ${historyResultClass(x.result)}">${esc(x.result || "—")}</td>
+      </tr>
+    `).join("");
+  } catch(e) {
+    historyBody.innerHTML = `<tr><td colspan="4" class="bad">${esc(e.message)}</td></tr>`;
+  }
+}
 
 async function deleteAccount(id, userId){
   const ok = confirm(
